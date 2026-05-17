@@ -1,0 +1,14 @@
+{
+  "name": "gustavo-ia-node",
+  "version": "1.0.0",
+  "description": "Gustavo IA - Node.js Version",
+  "main": "servidor.js",
+  "scripts": {
+    "start": "node servidor.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "groq-sdk": "^0.12.0",
+    "dotenv": "^16.3.1"
+  }
+}
