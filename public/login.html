@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gustavo IA - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: white; }
+        .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .hero-gradient { background: radial-gradient(circle at 50% 50%, #3b82f622, transparent 50%); }
+    </style>
+</head>
+<body class="hero-gradient flex items-center justify-center min-h-screen p-6">
+
+    <div class="glass max-w-md w-full p-10 rounded-[40px] shadow-2xl border border-white/5 text-center relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+        
+        <div class="mb-10">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center font-black text-2xl mx-auto mb-6 shadow-lg shadow-blue-500/20">G</div>
+            <h1 class="text-3xl font-black mb-2 tracking-tighter italic uppercase">Gustavo <span class="text-blue-500">IA</span></h1>
+            <p class="text-slate-500 text-sm">Identifica-te para aceder ao Coração.</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="text-left mb-6">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-2">ID do Arquiteto</label>
+                <input type="text" value="JC No Beat" disabled class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-slate-300 mt-1">
+            </div>
+
+            <button id="loginBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-slate-200 transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl">
+                Aceder ao Dashboard
+            </button>
+            
+            <div class="pt-6">
+                <p class="text-[10px] text-slate-600 px-6 uppercase font-bold tracking-tight">
+                    Acesso restrito ao pessoal da <span class="text-blue-500">Atlas Evolution</span>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginBtn').onclick = () => {
+            // Simulação de login para o JC
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "A Autenticar...";
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 800);
+        };
+    </script>
+</body>
+</html>
