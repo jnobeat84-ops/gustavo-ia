@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gustavo IA - Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --accent-color: #3b82f6;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: white; height: 100vh; overflow: hidden; }
+        .glass { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); }
+        .chat-container { height: calc(100vh - 180px); overflow-y: auto; }
+        .message-bubble { max-width: 80%; padding: 1rem; border-radius: 1.5rem; margin-bottom: 1rem; }
+        .user-msg { background: var(--accent-color); align-self: flex-end; border-bottom-right-radius: 0; }
+        .ia-msg { background: rgba(255,255,255,0.05); align-self: flex-start; border-bottom-left-radius: 0; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <!-- Header -->
+    <header class="p-6 glass flex justify-between items-center z-10">
+        <div class="flex items-center gap-4">
+            <a href="/dashboard" class="text-slate-400 hover:text-white">← Sair</a>
+            <div>
+                <h2 id="charName" class="font-bold">Duarte</h2>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-xs text-slate-400" id="currentEngine">Llama 3.3 70B</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <select id="engineSelector" class="bg-slate-800 text-xs border border-white/10 rounded-lg px-2 py-1 outline-none">
+                <option value="llama-3.3">Llama 3.3 (Max)</option>
+                <option value="llama-3.1-70b">Llama 3.1 70B</option>
+                <option value="llama-3.1-8b">Llama 3.1 8B (Fast)</option>
+                <option value="mixtral-8x7b">Mixtral 8x7B</option>
+                <option value="gemma-2-9b">Gemma 2</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Chat -->
+    <main id="chatBox" class="chat-container p-6 flex flex-col">
+        <!-- Boas-vindas -->
+        <div class="ia-msg message-bubble">
+            <p id="welcomeMsg">Pô, finalmente apareceste. Tás pronto para ouvir umas verdades ou vais chorar?</p>
+        </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="p-6 glass mt-auto">
+        <form id="chatForm" class="flex gap-4 max-w-5xl mx-auto">
+            <input type="text" id="userInput" placeholder="Escreve aqui..." 
+                class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all">
+            <button type="submit" id="sendBtn" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold transition-all transform active:scale-95">
+                Enviar
+            </button>
+        </form>
+    </footer>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const engineSelector = document.getElementById('engineSelector');
+        
+        // Get archetype from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const arquetipo = urlParams.get('p') || 'duarte';
+        const history = [];
+
+        const configs = {
+            duarte: { name: 'Duarte', color: '#ef4444', welcome: 'Pô, finalmente apareceste. Tás pronto para ouvir umas verdades ou vais chorar?' },
+            maty: { name: 'Maty', color: '#a855f7', welcome: 'EIAAA MANO! Tás bom? Trouxeste as jolas ou vieste só chatear?' },
+            joao: { name: 'Joao', color: '#ec4899', welcome: 'Olá querida. Estás a servir ou estás só a ocupar espaço?' },
+            diego: { name: 'Diego', color: '#3b82f6', welcome: 'Olá JC. Como corre o projeto Atlas? Vamos focar-nos no que importa.' }
+        };
+
+        const current = configs[arquetipo];
+        document.getElementById('charName').innerText = current.name;
+        document.getElementById('welcomeMsg').innerText = current.welcome;
+        document.body.style.setProperty('--accent-color', current.color);
+
+        function addMessage(text, isUser) {
+            const div = document.createElement('div');
+            div.className = `message-bubble ${isUser ? 'user-msg' : 'ia-msg'}`;
+            div.innerText = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        chatForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, true);
+            userInput.value = '';
+            
+            // Add typing indicator
+            const typing = document.createElement('div');
+            typing.className = 'ia-msg message-bubble italic text-slate-500';
+            typing.innerText = 'A pensar...';
+            chatBox.appendChild(typing);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        arquetipo: arquetipo,
+                        model: engineSelector.value,
+                        history: history.slice(-6)
+                    })
+                });
+
+                const data = await response.json();
+                chatBox.removeChild(typing);
+
+                if (data.resposta_ia) {
+                    addMessage(data.resposta_ia, false);
+                    history.push({ role: 'user', content: text });
+                    history.push({ role: 'assistant', content: data.resposta_ia });
+                    document.getElementById('currentEngine').innerText = data.motor;
+                }
+            } catch (err) {
+                chatBox.removeChild(typing);
+                addMessage('Erro de conexão. O servidor foi abaixo?', false);
+            }
+        };
+    </script>
+</body>
+</html>
