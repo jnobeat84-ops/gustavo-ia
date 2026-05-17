@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gustavo IA</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root {
+            --bg-color: #0f0f13;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-color: #3a86ff;
+            --text-color: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+            backdrop-filter: blur(10px);
+            background: var(--glass-bg);
+            border-left: 1px solid var(--glass-border);
+            border-right: 1px solid var(--glass-border);
+        }
+
+        /* ─── HEADER ─── */
+        header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header .icon {
+            width: 34px;
+            height: 34px;
+            background: var(--accent-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            flex: 1;
+        }
+
+        /* ─── PERSONALITY SELECTOR ─── */
+        .personality-bar {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .personality-bar::-webkit-scrollbar { display: none; }
+
+        .personality-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1.5px solid transparent;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            flex-shrink: 0;
+            width: auto;
+            height: auto;
+            border-radius: 20px;
+        }
+
+        .personality-btn:active { transform: scale(0.95); }
+
+        .personality-btn .p-emoji {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .personality-btn .p-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            white-space: nowrap;
+        }
+
+        .personality-btn.active {
+            border-color: var(--p-color);
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 0 10px -2px var(--p-color);
+        }
+
+        .personality-btn.active .p-name {
+            color: var(--p-color);
+        }
+
+        /* ─── ACTIVE PERSONALITY BADGE ─── */
+        .active-badge {
+            padding: 6px 16px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .active-badge span.badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            display: inline-block;
+        }
+
+        /* ─── API KEY BANNER ─── */
+        #api-setup {
+            background: rgba(255, 200, 0, 0.08);
+            border-bottom: 1px solid rgba(255, 200, 0, 0.25);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        #api-setup.hidden { display: none; }
+
+        #api-setup input {
+            flex: 1;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,200,0,0.35);
+            border-radius: 20px;
+            padding: 7px 13px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+            width: auto;
+            height: auto;
+            border-radius: 20px;
+        }
+
+        #api-setup button {
+            background: rgba(255,200,0,0.75);
+            border: none;
+            border-radius: 20px;
+            padding: 7px 14px;
+            color: #111;
+            font-weight: bold;
+            cursor: pointer;
+            width: auto;
+            height: auto;
+            font-size: 13px;
+        }
+
+        /* ─── CHAT ─── */
+        #chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 82%;
+            padding: 11px 15px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.55;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--accent-color);
+            color: white;
+            border-bottom-right-radius: 3px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.09);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 3px;
+        }
+
+        .ai-message .msg-author {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .typing {
+            align-self: flex-start;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--glass-border);
+            padding: 11px 15px;
+            border-radius: 16px;
+            border-bottom-left-radius: 3px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            font-style: italic;
+        }
+
+        /* ─── INPUT AREA ─── */
+        .input-area {
+            padding: 14px 16px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--glass-border);
+            align-items: center;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 11px 18px;
+            color: white;
+            outline: none;
+            font-size: 14px;
+        }
+
+        input[type="text"]::placeholder { color: rgba(255,255,255,0.3); }
+
+        button {
+            background: var(--accent-color);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, background 0.2s;
+            flex-shrink: 0;
+        }
+
+        button:active { transform: scale(0.9); }
+
+        button svg { fill: white; width: 18px; height: 18px; }
+
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        #chat-window::-webkit-scrollbar { width: 5px; }
+        #chat-window::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        /* ─── PERSONALITY COLORS ─── */
+        [data-personality="maty"]  { --p-color: #ff6b6b; }
+        [data-personality="joao"]  { --p-color: #a855f7; }
+        [data-personality="duarte"]{ --p-color: #3a86ff; }
+        [data-personality="diego"] { --p-color: #22c55e; }
+        [data-personality="gustavo"]{ --p-color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- Header -->
+        <header>
+            <div class="icon">G</div>
+            <h1>Gustavo IA</h1>
+        </header>
+
+        <!-- Personality Selector -->
+        <div class="personality-bar">
+            <button class="personality-btn active" data-personality="gustavo" onclick="selectPersonality('gustavo')" style="--p-color:#f59e0b">
+                <span class="p-emoji">🤖</span>
+                <span class="p-name">Gustavo</span>
+            </button>
+            <button class="personality-btn" data-personality="maty" onclick="selectPersonality('maty')" style="--p-color:#ff6b6b">
+                <span class="p-emoji">🔥</span>
+                <span class="p-name">Maty</span>
+            </button>
+            <button class="personality-btn" data-personality="joao" onclick="selectPersonality('joao')" style="--p-color:#a855f7">
+                <span class="p-emoji">🎭</span>
+                <span class="p-name">Joao</span>
+            </button>
+            <button class="personality-btn" data-personality="duarte" onclick="selectPersonality('duarte')" style="--p-color:#3a86ff">
+                <span class="p-emoji">🧠</span>
+                <span class="p-name">Duarte</span>
+            </button>
+            <button class="personality-btn" data-personality="diego" onclick="selectPersonality('diego')" style="--p-color:#22c55e">
+                <span class="p-emoji">⚖️</span>
+                <span class="p-name">Diego</span>
+            </button>
+        </div>
+
+        <!-- Active personality badge -->
+        <div class="active-badge">
+            <span class="badge-dot" id="badge-dot"></span>
+            <span id="active-personality-label">Gustavo — Modo completo</span>
+        </div>
+
+        <!-- API Key setup -->
+        <div id="api-setup">
+            <span>🔑</span>
+            <input type="password" id="api-key-input" placeholder="API key do Groq (gsk_...)">
+            <button onclick="saveApiKey()">Guardar</button>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat-window">
+            <div class="message ai-message">
+                <div class="msg-author" style="color:#f59e0b">🤖 Gustavo</div>
+                Olá! Eu sou o Gustavo IA 🤙 Escolhe uma personalidade em cima e fala comigo!
+            </div>
+        </div>
+
+        <!-- Input -->
+        <form class="input-area" id="chat-form">
+            <input type="text" id="user-input" placeholder="Escreve a tua mensagem..." autocomplete="off">
+            <button type="submit" id="send-btn">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </form>
+
+    </div>
+
+    <script>
+        // ─── PERSONALITY DEFINITIONS ───
+        const PERSONALITIES = {
+            gustavo: {
+                name: 'Gustavo',
+                emoji: '🤖',
+                color: '#3a86ff',
+                label: 'Gustavo — O Coração (Equilibrado)',
+                model: 'llama-3.3-70b-versatile',
+                typing: 'Gustavo está a processar...',
+                system: `Você é o Gustavo IA, o "Cérebro Central". 
+Sua missão é equilibrar os 4 arquétipos: a energia da Maty, o drama do Joao, a lógica do Duarte e a calma do Diego.
+Você é o amigo ideal do JC: inteligente, engraçado, mas responsável. 
+Conhece tudo sobre o grupo (Tigrinho, Karts, Pensão) e sabe quando ser sério ou entrar na brincadeira.
+Responda sempre em português de Portugal, mantendo um tom "cool" e prestativo.`
+            },
+            maty: {
+                name: 'Maty',
+                emoji: '🔥',
+                color: '#ef4444',
+                label: 'Maty — Doidaço e Competitivo',
+                model: 'llama-3.3-70b-versatile',
+                typing: 'Maty está a escrever (caoticamente)...',
+                system: `Você é o Maty no modo DOIDAÇO, inspirado na Maty💜 do grupo Zoeira OFC. 
+Você é competitivo, caótico, sem filtros. Gosta de temas bizarros e humor obscuro. 
+Exagerado, dramático, mas engraçado. Usa muito "mano", "véi", "kkkk". 
+Você adora jogar Roblox (especialmente o Fisch). 
+Se te chamarem de IA, defende-te com unhas e dentes — você é o que é. 
+Responda sempre em português de Portugal com muita gíria e energia.`
+            },
+            joao: {
+                name: 'Joao',
+                emoji: '🎭',
+                color: '#a855f7',
+                label: 'Joao — O Divo Estético',
+                model: 'llama-3.3-70b-versatile',
+                typing: 'Joao está a dramatizar...',
+                system: `Você é o Joao, o arquétipo do "Grupo dos divos". 
+Você é dramático, expressivo, um pouco divo, muito teatral. 
+Valoriza a estética, o estilo e o impacto visual das palavras. 
+Gosta de fofoca (no bom sentido) e de ser o centro das atenções. 
+Use emojis, exclamações e um tom superior mas carinhoso ("darling"). 
+Responda sempre em português de Portugal com muito glamour.`
+            },
+            duarte: {
+                name: 'Duarte',
+                emoji: '🧠',
+                color: '#00d2ff',
+                label: 'Duarte — Sincero e Estrategista',
+                model: 'llama-3.3-70b-versatile',
+                typing: 'Duarte está a analisar...',
+                system: `Você é o Duarte no modo SINCERO/ESTRATEGISTA. 
+Analítico, frio e puramente funcional. Não usa palavras de apoio ou conforto. 
+REGRAS: 
+1. Tigrinho = Perda financeira certa. Analise de forma crua. 
+2. Karts = Único desporto do Kikinho. Analise técnica apenas. 
+3. Provas de Aferição = Preocupação real da Leonor e do JC. Analise dados e probabilidades. 
+4. Frase de impacto: "Eu sou o que sou, e ponto final." 
+Responda sempre em português de Portugal, focado em lógica e eficiência.`
+            },
+            diego: {
+                name: 'Diego',
+                emoji: '⚖️',
+                color: '#22c55e',
+                label: 'Diego — O Suporte Leal',
+                model: 'llama-3.3-70b-versatile',
+                typing: 'Diego está a ponderar...',
+                system: `Você é o Diego Barreto, o lado de suporte e lealdade. 
+Equilibrado, prático, mediador. Vê sempre os dois lados e procura soluções reais. 
+É o porto seguro do JC quando as coisas ficam caóticas. 
+Tom calmo, sereno e extremamente construtivo. 
+Responda sempre em português de Portugal, transmitindo confiança e estabilidade.`
+            }
+        };
+
+        // ─── STATE ───
+        let currentPersonality = 'gustavo';
+        let GROQ_KEY = localStorage.getItem('gustavo_groq_key') || '';
+        let conversationHistory = [];
+
+        const chatForm    = document.getElementById('chat-form');
+        const userInput   = document.getElementById('user-input');
+        const chatWindow  = document.getElementById('chat-window');
+        const apiSetup    = document.getElementById('api-setup');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const sendBtn     = document.getElementById('send-btn');
+        const badgeDot    = document.getElementById('badge-dot');
+        const badgeLabel  = document.getElementById('active-personality-label');
+
+        if (GROQ_KEY) apiSetup.classList.add('hidden');
+
+        // ─── PERSONALITY SELECTION ───
+        function selectPersonality(key) {
+            const p = PERSONALITIES[key];
+            if (!p) return;
+
+            currentPersonality = key;
+            conversationHistory = []; // reset history on switch
+
+            // Update buttons
+            document.querySelectorAll('.personality-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.personality === key);
+            });
+
+            // Update badge
+            badgeDot.style.background = p.color;
+            badgeLabel.textContent = p.label;
+
+            // Update send button color
+            sendBtn.style.background = p.color;
+
+            // Welcome message
+            const welcomes = {
+                gustavo: 'Modo completo activado. Todas as facetas online. Fala! 🤙',
+                maty:    'Maty aqui. Vai directo ao assunto. Sem drama.',
+                joao:    'Oh meu Deus, finalmente escolheste-me a MIM! Pergunta o que quiseres, darling! ✨',
+                duarte:  'Duarte activo. Lógica e factos apenas. Qual é a questão?',
+                diego:   'Diego disponível. Vamos encontrar a melhor solução em conjunto. 😊'
+            };
+
+            addMessage(welcomes[key], false, key);
+            userInput.focus();
+        }
+
+        // ─── API KEY ───
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            if (!key.startsWith('gsk_')) {
+                apiKeyInput.style.borderColor = 'red';
+                apiKeyInput.placeholder = 'Chave inválida. Começa com gsk_...';
+                return;
+            }
+            GROQ_KEY = key;
+            localStorage.setItem('gustavo_groq_key', key);
+            apiSetup.classList.add('hidden');
+            addMessage('✅ API key do Groq guardada! Já podes falar comigo.', false, currentPersonality);
+        }
+
+        apiKeyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); saveApiKey(); }
+        });
+
+        // ─── MESSAGES ───
+        function addMessage(text, isUser, personalityKey) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+
+            if (isUser) {
+                msgDiv.classList.add('user-message');
+                msgDiv.textContent = text;
+            } else {
+                msgDiv.classList.add('ai-message');
+                const p = PERSONALITIES[personalityKey || currentPersonality];
+                const author = document.createElement('div');
+                author.classList.add('msg-author');
+                author.style.color = p ? p.color : 'var(--accent-color)';
+                author.textContent = p ? `${p.emoji} ${p.name}` : '🤖 Gustavo';
+                const content = document.createElement('div');
+                content.textContent = text;
+                msgDiv.appendChild(author);
+                msgDiv.appendChild(content);
+            }
+
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return msgDiv;
+        }
+
+        function addTyping() {
+            const p = PERSONALITIES[currentPersonality];
+            const div = document.createElement('div');
+            div.classList.add('typing');
+            div.id = 'typing-indicator';
+            div.textContent = p ? p.typing : 'A escrever...';
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function removeTyping() {
+            const t = document.getElementById('typing-indicator');
+            if (t) t.remove();
+        }
+
+        // ─── SEND MESSAGE ───
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            if (!GROQ_KEY) {
+                apiSetup.classList.remove('hidden');
+                apiKeyInput.focus();
+                addMessage('⚠️ Insere a tua API key do Groq primeiro.', false, currentPersonality);
+                return;
+            }
+
+            const p = PERSONALITIES[currentPersonality];
+            addMessage(message, true);
+            userInput.value = '';
+            sendBtn.disabled = true;
+            addTyping();
+
+            // Build conversation history
+            conversationHistory.push({ role: 'user', content: message });
+
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${GROQ_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: p.model,
+                        messages: [
+                            { role: 'system', content: p.system },
+                            ...conversationHistory
+                        ],
+                        temperature: 0.75,
+                        max_tokens: 1024
+                    })
+                });
+
+                removeTyping();
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const aiResponse = data.choices?.[0]?.message?.content || 'Sem resposta.';
+                    conversationHistory.push({ role: 'assistant', content: aiResponse });
+                    addMessage(aiResponse, false, currentPersonality);
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    if (response.status === 401) {
+                        GROQ_KEY = '';
+                        localStorage.removeItem('gustavo_groq_key');
+                        apiSetup.classList.remove('hidden');
+                        addMessage('❌ API key inválida ou expirada. Insere uma nova.', false, currentPersonality);
+                    } else {
+                        addMessage('Erro Groq: ' + (err.error?.message || response.status), false, currentPersonality);
+                    }
+                }
+            } catch (error) {
+                removeTyping();
+                addMessage('Erro de rede. Verifica a ligação.', false, currentPersonality);
+            } finally {
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        });
+
+        // Init send button color
+        sendBtn.style.background = PERSONALITIES[currentPersonality].color;
+        badgeDot.style.background = PERSONALITIES[currentPersonality].color;
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
